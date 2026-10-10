@@ -1,0 +1,25 @@
+name: Build unsigned IPA
+on:
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: |
+          npm install
+          npm run build
+          npx cap add ios
+          npx cap sync ios
+      - run: |
+          xcodebuild -workspace ios/App/App.xcworkspace -scheme App -configuration Release -sdk iphoneos -archivePath build/App.xcarchive CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO archive
+          mkdir -p build/Payload
+          cp -R build/App.xcarchive/Products/Applications/App.app build/Payload/
+          cd build && zip -qry WallKhattab.ipa Payload
+      - uses: actions/upload-artifact@v4
+        with:
+          name: WallKhattab-ipa
+          path: build/WallKhattab.ipa
